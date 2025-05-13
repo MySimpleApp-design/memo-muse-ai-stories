@@ -12,7 +12,8 @@ import {
   ImageIcon, 
   Video, 
   AudioLines,
-  BookUser
+  BookUser,
+  Wand
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -253,7 +254,7 @@ export default function MemoryDetail() {
                 
                 {memory.aiGenerated && (
                   <div className="text-xs bg-highlight/10 text-highlight px-2 py-1 rounded flex items-center">
-                    <Wand2 size={12} className="mr-1" />
+                    <Wand size={12} className="mr-1" />
                     Título gerado com IA
                   </div>
                 )}

@@ -3,13 +3,14 @@ import { Button } from "@/components/ui/button";
 import { BookOpenText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { Footer } from "@/components/layout/Footer";
 
 export default function Home() {
   const { user } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-secondary/30">
-      <div className="container mx-auto px-4 py-16">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-background to-secondary/30">
+      <div className="container mx-auto px-4 py-16 flex-grow">
         <div className="flex flex-col items-center justify-center space-y-12 text-center">
           <div className="animate-fade-in">
             <BookOpenText size={76} className="text-primary mx-auto mb-6" />
@@ -34,7 +35,7 @@ export default function Home() {
               <>
                 <Link to="/login">
                   <Button size="lg" className="text-lg px-8">
-                    Entrar
+                  Entrar
                   </Button>
                 </Link>
                 <Link to="/register">
@@ -70,6 +71,7 @@ export default function Home() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

@@ -11,7 +11,8 @@ import {
   Book, 
   User, 
   Plus, 
-  Folder 
+  Folder,
+  Home
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -23,7 +24,7 @@ export function AppSidebar() {
 
   const handleLogout = async () => {
     await logout();
-    navigate("/login");
+    navigate("/");
   };
 
   return (
@@ -33,6 +34,20 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <div className="space-y-1 px-3">
+          <NavLink 
+            to="/" 
+            className={({ isActive }) => 
+              `flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
+                isActive 
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium" 
+                  : "text-sidebar-foreground hover:bg-sidebar-accent/50"
+              }`
+            }
+          >
+            <Home size={18} />
+            <span>Início</span>
+          </NavLink>
+
           <NavLink 
             to="/dashboard" 
             className={({ isActive }) => 

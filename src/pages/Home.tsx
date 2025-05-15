@@ -1,6 +1,6 @@
 
 import { Button } from "@/components/ui/button";
-import { BookPen } from "lucide-react";
+import { BookOpenText } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 
@@ -12,7 +12,7 @@ export default function Home() {
       <div className="container mx-auto px-4 py-16">
         <div className="flex flex-col items-center justify-center space-y-12 text-center">
           <div className="animate-fade-in">
-            <BookPen size={76} className="text-primary mx-auto mb-6" />
+            <BookOpenText size={76} className="text-primary mx-auto mb-6" />
             <h1 className="text-4xl md:text-5xl font-bold mb-2">Meu Museu</h1>
           </div>
           

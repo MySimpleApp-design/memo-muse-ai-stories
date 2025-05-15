@@ -1,7 +1,7 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
+import { usePlan } from "./PlanContext";
 
 // Define types for our data
 export interface Room {
@@ -20,7 +20,6 @@ export interface Memory {
   userId: string;
   title: string;
   description: string;
-  aiGenerated?: boolean;
   mediaType: "text" | "image" | "video" | "audio";
   mediaUrl?: string;
   content?: string;
@@ -40,8 +39,8 @@ interface MuseumContextType {
   createMemory: (data: Omit<Memory, "id" | "userId" | "createdAt" | "updatedAt">) => Promise<Memory>;
   updateMemory: (id: string, data: Partial<Omit<Memory, "id" | "userId" | "createdAt" | "updatedAt">>) => Promise<Memory>;
   deleteMemory: (id: string) => Promise<void>;
-  // AI operations
-  generateCaption: (description: string) => Promise<string>;
+  // Plan helpers
+  getRoomMemoryCount: (roomId: string) => number;
 }
 
 const MuseumContext = createContext<MuseumContextType | undefined>(undefined);
@@ -60,6 +59,7 @@ interface MuseumProviderProps {
 
 export function MuseumProvider({ children }: MuseumProviderProps) {
   const { user } = useAuth();
+  const { isWithinLimits, planLimits } = usePlan();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -129,12 +129,24 @@ export function MuseumProvider({ children }: MuseumProviderProps) {
     setMemories(updatedMemories);
   };
 
+  // Helper function to get memory count for a specific room
+  const getRoomMemoryCount = (roomId: string): number => {
+    return memories.filter(m => m.roomId === roomId).length;
+  };
+
   // Room operations
   const createRoom = async (data: Omit<Room, "id" | "userId" | "createdAt" | "updatedAt">) => {
     if (!user) throw new Error("User not authenticated");
     
     try {
       setIsLoading(true);
+
+      // Check if user is within room limit
+      if (!isWithinLimits(rooms.length)) {
+        toast.error(`Limite de salas atingido (${planLimits.maxRooms}). Faça upgrade para o plano Premium.`);
+        throw new Error("Room limit reached");
+      }
+      
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
       
@@ -154,7 +166,6 @@ export function MuseumProvider({ children }: MuseumProviderProps) {
       return newRoom;
     } catch (error) {
       console.error("Error creating room:", error);
-      toast.error("Erro ao criar sala");
       throw error;
     } finally {
       setIsLoading(false);
@@ -225,6 +236,14 @@ export function MuseumProvider({ children }: MuseumProviderProps) {
     
     try {
       setIsLoading(true);
+      
+      // Check if user is within memory limit for this room
+      const roomMemoryCount = getRoomMemoryCount(data.roomId);
+      if (!isWithinLimits(rooms.length, roomMemoryCount)) {
+        toast.error(`Limite de memórias atingido (${planLimits.maxMemoriesPerRoom} por sala). Faça upgrade para o plano Premium.`);
+        throw new Error("Memory limit reached");
+      }
+
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 500));
       
@@ -244,7 +263,6 @@ export function MuseumProvider({ children }: MuseumProviderProps) {
       return newMemory;
     } catch (error) {
       console.error("Error creating memory:", error);
-      toast.error("Erro ao criar memória");
       throw error;
     } finally {
       setIsLoading(false);
@@ -304,62 +322,6 @@ export function MuseumProvider({ children }: MuseumProviderProps) {
     }
   };
 
-  // AI operations
-  const generateCaption = async (description: string) => {
-    try {
-      // This is a mock AI caption generation function
-      // In a real application, this would call an OpenAI API or similar
-      setIsLoading(true);
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Simple function to generate a creative title based on the description
-      const generateTitle = (desc: string) => {
-        const phrases = [
-          "Memórias que Ecoam: ",
-          "Instantes Capturados: ",
-          "Fragmentos do Tempo: ",
-          "Cores da Lembrança: ",
-          "Ecos do Passado: ",
-          "Página da Vida: ",
-          "Impressões Eternas: ",
-          "Momentos Guardados: ",
-        ];
-        
-        // Get keywords from description
-        const words = desc.split(" ")
-          .filter(word => word.length > 4)
-          .filter(word => !["sobre", "entre", "quando", "ainda", "depois", "antes"].includes(word));
-        
-        // Choose 1-2 keywords from the description
-        const keywordCount = Math.min(2, words.length);
-        const selectedWords = [];
-        
-        for (let i = 0; i < keywordCount; i++) {
-          if (words.length > 0) {
-            const randomIndex = Math.floor(Math.random() * words.length);
-            selectedWords.push(words[randomIndex]);
-            words.splice(randomIndex, 1);
-          }
-        }
-        
-        // Generate the title
-        const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
-        return randomPhrase + selectedWords.join(" ");
-      };
-      
-      return generateTitle(description);
-      
-    } catch (error) {
-      console.error("Error generating caption:", error);
-      toast.error("Erro ao gerar legenda");
-      return "Memória Especial";
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const value = {
     rooms,
     memories,
@@ -370,7 +332,7 @@ export function MuseumProvider({ children }: MuseumProviderProps) {
     createMemory,
     updateMemory,
     deleteMemory,
-    generateCaption,
+    getRoomMemoryCount,
   };
 
   return <MuseumContext.Provider value={value}>{children}</MuseumContext.Provider>;

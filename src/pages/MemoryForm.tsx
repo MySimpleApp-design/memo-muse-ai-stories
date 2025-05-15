@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -7,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Upload, X, Save, Wand2 } from "lucide-react";
+import { ArrowLeft, Upload, X, Save } from "lucide-react";
 import { toast } from "sonner";
 import {
   Select,
@@ -16,11 +15,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export default function MemoryForm() {
   const { roomId, memoryId } = useParams<{ roomId: string; memoryId: string }>();
-  const { rooms, memories, createMemory, updateMemory, generateCaption, isLoading } = useMuseum();
+  const { rooms, memories, createMemory, updateMemory, isLoading } = useMuseum();
   const navigate = useNavigate();
   
   // Form state
@@ -31,7 +29,6 @@ export default function MemoryForm() {
   const [mediaUrl, setMediaUrl] = useState("");
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isGeneratingCaption, setIsGeneratingCaption] = useState(false);
   
   // Refs for file inputs
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -94,25 +91,6 @@ export default function MemoryForm() {
     setMediaPreview(null);
   };
 
-  const handleGenerateCaption = async () => {
-    if (!description) {
-      toast.error("Adicione uma descrição para gerar uma legenda");
-      return;
-    }
-    
-    try {
-      setIsGeneratingCaption(true);
-      const generatedTitle = await generateCaption(description);
-      setTitle(generatedTitle);
-      toast.success("Título gerado com sucesso!");
-    } catch (error) {
-      console.error("Error generating caption:", error);
-      toast.error("Erro ao gerar título");
-    } finally {
-      setIsGeneratingCaption(false);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -141,7 +119,6 @@ export default function MemoryForm() {
         mediaType,
         ...(content && { content }),
         ...(mediaUrl && { mediaUrl }),
-        aiGenerated: title === "" ? false : true,
       };
       
       if (isEditMode && memoryId) {
@@ -226,12 +203,12 @@ export default function MemoryForm() {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    onClick={handleGenerateCaption}
-                    disabled={isGeneratingCaption || !description}
+                    onClick={() => navigate(`/rooms/${roomId}`)}
+                    disabled={isLoading || isSubmitting}
                     className="text-highlight hover:text-highlight-dark"
                   >
-                    <Wand2 size={14} className="mr-1" />
-                    {isGeneratingCaption ? "Gerando..." : "Gerar com IA"}
+                    <ArrowLeft size={16} className="mr-1" />
+                    Voltar
                   </Button>
                 </div>
                 <Input
@@ -239,7 +216,7 @@ export default function MemoryForm() {
                   placeholder="Título da sua memória"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  disabled={isLoading || isSubmitting || isGeneratingCaption}
+                  disabled={isLoading || isSubmitting}
                   maxLength={100}
                 />
               </div>

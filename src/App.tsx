@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
 import { MuseumProvider } from "./context/MuseumContext";
+import { PlanProvider } from "./context/PlanContext";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 
 // Pages
@@ -21,6 +22,7 @@ import MemoryDetail from "./pages/MemoryDetail";
 import Profile from "./pages/Profile";
 import ShareView from "./pages/ShareView";
 import NotFound from "./pages/NotFound";
+import PlanUpgrade from "./pages/PlanUpgrade";
 
 const queryClient = new QueryClient();
 
@@ -28,68 +30,75 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <AuthProvider>
-        <MuseumProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/share/:userId" element={<ShareView />} />
-              
-              {/* Protected Routes */}
-              <Route path="/dashboard" element={
-                <ProtectedRoute>
-                  <Dashboard />
-                </ProtectedRoute>
-              } />
-              <Route path="/rooms" element={
-                <ProtectedRoute>
-                  <Rooms />
-                </ProtectedRoute>
-              } />
-              <Route path="/rooms/new" element={
-                <ProtectedRoute>
-                  <RoomForm />
-                </ProtectedRoute>
-              } />
-              <Route path="/rooms/:roomId" element={
-                <ProtectedRoute>
-                  <RoomDetail />
-                </ProtectedRoute>
-              } />
-              <Route path="/rooms/:roomId/edit" element={
-                <ProtectedRoute>
-                  <RoomForm />
-                </ProtectedRoute>
-              } />
-              <Route path="/rooms/:roomId/memories/new" element={
-                <ProtectedRoute>
-                  <MemoryForm />
-                </ProtectedRoute>
-              } />
-              <Route path="/rooms/:roomId/memories/:memoryId" element={
-                <ProtectedRoute>
-                  <MemoryDetail />
-                </ProtectedRoute>
-              } />
-              <Route path="/rooms/:roomId/memories/:memoryId/edit" element={
-                <ProtectedRoute>
-                  <MemoryForm />
-                </ProtectedRoute>
-              } />
-              <Route path="/profile" element={
-                <ProtectedRoute>
-                  <Profile />
-                </ProtectedRoute>
-              } />
-              
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </MuseumProvider>
+        <PlanProvider>
+          <MuseumProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/share/:userId" element={<ShareView />} />
+                
+                {/* Protected Routes */}
+                <Route path="/dashboard" element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } />
+                <Route path="/rooms" element={
+                  <ProtectedRoute>
+                    <Rooms />
+                  </ProtectedRoute>
+                } />
+                <Route path="/rooms/new" element={
+                  <ProtectedRoute>
+                    <RoomForm />
+                  </ProtectedRoute>
+                } />
+                <Route path="/rooms/:roomId" element={
+                  <ProtectedRoute>
+                    <RoomDetail />
+                  </ProtectedRoute>
+                } />
+                <Route path="/rooms/:roomId/edit" element={
+                  <ProtectedRoute>
+                    <RoomForm />
+                  </ProtectedRoute>
+                } />
+                <Route path="/rooms/:roomId/memories/new" element={
+                  <ProtectedRoute>
+                    <MemoryForm />
+                  </ProtectedRoute>
+                } />
+                <Route path="/rooms/:roomId/memories/:memoryId" element={
+                  <ProtectedRoute>
+                    <MemoryDetail />
+                  </ProtectedRoute>
+                } />
+                <Route path="/rooms/:roomId/memories/:memoryId/edit" element={
+                  <ProtectedRoute>
+                    <MemoryForm />
+                  </ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                } />
+                <Route path="/plans" element={
+                  <ProtectedRoute>
+                    <PlanUpgrade />
+                  </ProtectedRoute>
+                } />
+                
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </MuseumProvider>
+        </PlanProvider>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>

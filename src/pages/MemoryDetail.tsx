@@ -251,13 +251,6 @@ export default function MemoryDetail() {
                     </div>
                   </div>
                 </div>
-                
-                {memory.aiGenerated && (
-                  <div className="text-xs bg-highlight/10 text-highlight px-2 py-1 rounded flex items-center">
-                    <Wand size={12} className="mr-1" />
-                    Título gerado com IA
-                  </div>
-                )}
               </div>
             </div>
           </div>

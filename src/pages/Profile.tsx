@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Save, User, Upload, X } from "lucide-react";
+import { Save, Upload, X, CreditCard } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useMuseum } from "@/context/MuseumContext";
 import { usePlan } from "@/context/PlanContext";
@@ -21,14 +21,33 @@ export default function Profile() {
   const [avatar, setAvatar] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [creationDate, setCreationDate] = useState<string>("");
   
-  // Load avatar from localStorage on initialization
+  // Load avatar and creation date from localStorage on initialization
   useEffect(() => {
     if (user) {
       const storedAvatar = localStorage.getItem(`museum_avatar_${user.id}`);
       if (storedAvatar) {
         setAvatar(storedAvatar);
       }
+      
+      // Get or set creation date (fixed date that doesn't change)
+      let dateString = localStorage.getItem(`museum_creation_date_${user.id}`);
+      if (!dateString) {
+        // If no creation date is stored, set it now
+        dateString = new Date().toISOString();
+        localStorage.setItem(`museum_creation_date_${user.id}`, dateString);
+      }
+      
+      // Format the date for display
+      const date = new Date(dateString);
+      const formattedDate = date.toLocaleDateString('pt-BR', { 
+        day: '2-digit', 
+        month: '2-digit', 
+        year: 'numeric' 
+      });
+      
+      setCreationDate(formattedDate);
     }
   }, [user]);
   
@@ -151,9 +170,16 @@ export default function Profile() {
                   {!isPremium && (
                     <Link to="/plans">
                       <Button className="w-full mt-2 bg-highlight hover:bg-highlight/80">
+                        <CreditCard size={16} className="mr-2" />
                         Fazer Upgrade
                       </Button>
                     </Link>
+                  )}
+                  
+                  {!isPremium && (
+                    <p className="text-xs mt-2 text-muted-foreground">
+                      Plano Premium: 2,50 USD/mês. Libera uso ilimitado de salas, memórias e funcionalidades multimídia.
+                    </p>
                   )}
                 </div>
               </div>
@@ -212,7 +238,7 @@ export default function Profile() {
             </div>
             <div className="bg-highlight/10 rounded-lg p-4">
               <p className="text-sm text-gray-500">Data de criação</p>
-              <p className="text-lg font-semibold">10/05/2025</p>
+              <p className="text-lg font-semibold">{creationDate}</p>
             </div>
           </div>
         </div>

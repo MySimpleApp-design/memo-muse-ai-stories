@@ -15,6 +15,8 @@ interface PlanContextType {
   isWithinLimits: (roomCount: number, memoryCount?: number) => boolean;
   upgradeToPremium: () => void;
   isPremium: boolean;
+  usagePercentage: number;
+  getUsageDetails: (roomId: string) => { current: number; max: number; percentage: number };
 }
 
 const PLAN_LIMITS: Record<PlanType, PlanLimits> = {
@@ -45,6 +47,7 @@ interface PlanProviderProps {
 export function PlanProvider({ children }: PlanProviderProps) {
   const { user } = useAuth();
   const [currentPlan, setCurrentPlan] = useState<PlanType>("basic");
+  const [usagePercentage, setUsagePercentage] = useState(0);
 
   // Load user's plan from localStorage on initialization
   useEffect(() => {
@@ -76,6 +79,26 @@ export function PlanProvider({ children }: PlanProviderProps) {
     return withinRoomLimit;
   };
 
+  // Get detailed usage information for a specific room
+  const getUsageDetails = (roomId: string) => {
+    // This function would normally fetch data from the API
+    // For now, we'll use localStorage to simulate API behavior
+    const memoriesString = localStorage.getItem("museum_memories");
+    let current = 0;
+    
+    if (memoriesString && user) {
+      const memories = JSON.parse(memoriesString);
+      current = memories.filter(
+        (m: any) => m.roomId === roomId && m.userId === user.id
+      ).length;
+    }
+    
+    const max = planLimits.maxMemoriesPerRoom;
+    const percentage = max === Infinity ? 0 : Math.min(100, (current / max) * 100);
+    
+    return { current, max, percentage };
+  };
+
   // Upgrade user to premium plan
   const upgradeToPremium = () => {
     if (user) {
@@ -90,6 +113,8 @@ export function PlanProvider({ children }: PlanProviderProps) {
     isWithinLimits,
     upgradeToPremium,
     isPremium,
+    usagePercentage,
+    getUsageDetails,
   };
 
   return <PlanContext.Provider value={value}>{children}</PlanContext.Provider>;

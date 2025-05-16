@@ -1,13 +1,15 @@
+
 import { useState, useEffect, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { useMuseum, Memory } from "@/context/MuseumContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Upload, X, Save } from "lucide-react";
+import { ArrowLeft, Upload, X, Save, CreditCard } from "lucide-react";
 import { toast } from "sonner";
+import { usePlan } from "@/context/PlanContext";
 import {
   Select,
   SelectContent,
@@ -18,8 +20,9 @@ import {
 
 export default function MemoryForm() {
   const { roomId, memoryId } = useParams<{ roomId: string; memoryId: string }>();
-  const { rooms, memories, createMemory, updateMemory, isLoading } = useMuseum();
+  const { rooms, memories, createMemory, updateMemory, isLoading, getRoomMemoryCount } = useMuseum();
   const navigate = useNavigate();
+  const { isPremium, getUsageDetails, planLimits } = usePlan();
   
   // Form state
   const [title, setTitle] = useState("");
@@ -29,6 +32,7 @@ export default function MemoryForm() {
   const [mediaUrl, setMediaUrl] = useState("");
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLimitReached, setIsLimitReached] = useState(false);
   
   // Refs for file inputs
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -41,6 +45,12 @@ export default function MemoryForm() {
   const room = rooms.find(r => r.id === roomId);
   
   useEffect(() => {
+    // Check if the user has reached the memory limit
+    if (roomId && !isPremium && !isEditMode) {
+      const usage = getUsageDetails(roomId);
+      setIsLimitReached(usage.current >= planLimits.maxMemoriesPerRoom);
+    }
+    
     if (isEditMode && memoryId) {
       const memory = memories.find(m => m.id === memoryId);
       if (memory) {
@@ -52,7 +62,7 @@ export default function MemoryForm() {
         setMediaPreview(memory.mediaUrl || null);
       }
     }
-  }, [memoryId, memories, isEditMode]);
+  }, [memoryId, memories, isEditMode, roomId, isPremium, getUsageDetails, planLimits]);
 
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "video" | "audio") => {
     const file = e.target.files?.[0];
@@ -93,6 +103,12 @@ export default function MemoryForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Check if user has reached plan limits
+    if (!isPremium && !isEditMode && isLimitReached) {
+      toast.error("Limite de memórias atingido no plano gratuito. Torne-se Premium para liberar uso ilimitado.");
+      return;
+    }
     
     if (!title.trim()) {
       toast.error("Por favor, informe um título para a memória");
@@ -162,6 +178,56 @@ export default function MemoryForm() {
               onClick={() => navigate("/rooms")}
             >
               Ver todas as salas
+            </Button>
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (isLimitReached && !isPremium && !isEditMode) {
+    return (
+      <MainLayout>
+        <div className="space-y-6">
+          <div className="flex items-center mb-6">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="mr-4"
+              onClick={() => navigate(`/rooms/${roomId}`)}
+            >
+              <ArrowLeft size={16} className="mr-2" />
+              Voltar
+            </Button>
+            <h1 className="text-3xl font-bold">Limite de memórias atingido</h1>
+          </div>
+          
+          <div className="museum-card p-10 text-center">
+            <h2 className="text-2xl font-bold mb-4 text-highlight">Limite de Plano Atingido</h2>
+            <p className="text-gray-500 mb-6">
+              Você atingiu o limite de {planLimits.maxMemoriesPerRoom} memórias por sala no plano gratuito.
+            </p>
+            <p className="text-gray-500 mb-10">
+              Faça upgrade para o plano Premium e obtenha memórias ilimitadas em todas as suas salas.
+            </p>
+            
+            <div className="mb-6 p-6 bg-highlight/5 border border-highlight/20 rounded-lg">
+              <h3 className="text-xl font-semibold mb-2 text-highlight">Plano Premium</h3>
+              <p className="mb-4">2,50 USD/mês. Libera uso ilimitado de salas, memórias e funcionalidades multimídia.</p>
+              <Link to="/plans">
+                <Button className="bg-highlight hover:bg-highlight/80">
+                  <CreditCard size={16} className="mr-2" />
+                  Fazer Upgrade para Premium
+                </Button>
+              </Link>
+            </div>
+            
+            <Button 
+              variant="outline"
+              onClick={() => navigate(`/rooms/${roomId}`)}
+            >
+              <ArrowLeft size={16} className="mr-2" />
+              Voltar para a Sala
             </Button>
           </div>
         </div>

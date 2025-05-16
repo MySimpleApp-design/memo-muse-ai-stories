@@ -17,6 +17,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { usePlan } from "@/context/PlanContext";
+import { Badge } from "@/components/ui/badge";
 
 export function Header() {
   const { user } = useAuth();
@@ -86,7 +87,14 @@ export function Header() {
               {user?.name?.charAt(0) || "U"}
             </div>
           )}
-          <span className="ml-2 hidden sm:inline-block">{user?.name || "Usuário"}</span>
+          <span className="ml-2 hidden sm:inline-block">
+            {user?.name || "Usuário"} 
+            {isPremium && (
+              <Badge variant="outline" className="ml-2 bg-highlight/10 text-highlight border-highlight/20">
+                Premium
+              </Badge>
+            )}
+          </span>
         </div>
       </div>
     </header>

@@ -62,7 +62,7 @@ export default function PlanUpgrade() {
           <div className={`museum-card p-6 ${currentPlan === "premium" ? "border-2 border-highlight" : ""}`}>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-2xl font-bold">Plano Premium</h2>
-              <span className="text-xl font-bold text-highlight">R$ 29,90</span>
+              <span className="text-xl font-bold text-highlight">2,50 USD/mês</span>
             </div>
             
             <div className="space-y-4 mb-8">
@@ -76,7 +76,7 @@ export default function PlanUpgrade() {
               </div>
               <div className="flex items-center">
                 <Check size={20} className="text-highlight mr-2" />
-                <span>Todas as funções atuais e futuras</span>
+                <span>Todas as funcionalidades multimídia</span>
               </div>
               <div className="flex items-center">
                 <Check size={20} className="text-highlight mr-2" />
@@ -99,6 +99,12 @@ export default function PlanUpgrade() {
                 <CreditCard size={16} className="mr-2" />
                 Fazer Upgrade Agora
               </Button>
+            )}
+            
+            {!isPremium && (
+              <p className="text-xs text-center mt-2 text-muted-foreground">
+                Plano Premium: 2,50 USD/mês. Libera uso ilimitado de salas, memórias e funcionalidades multimídia.
+              </p>
             )}
           </div>
         </div>

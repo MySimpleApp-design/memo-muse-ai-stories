@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { useAuth } from "./AuthContext";
 import { toast } from "sonner";
@@ -59,7 +60,7 @@ interface MuseumProviderProps {
 
 export function MuseumProvider({ children }: MuseumProviderProps) {
   const { user } = useAuth();
-  const { isWithinLimits, planLimits } = usePlan();
+  const { canAddMemoryToRoom, planLimits } = usePlan();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [memories, setMemories] = useState<Memory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -104,29 +105,41 @@ export function MuseumProvider({ children }: MuseumProviderProps) {
 
   // Save the updated data to localStorage
   const saveRooms = (updatedRooms: Room[]) => {
-    // Get all rooms including those from other users
-    const storedRooms = localStorage.getItem("museum_rooms");
-    const allRooms = storedRooms ? JSON.parse(storedRooms) as Room[] : [];
-    
-    // Filter out current user's rooms and add the updated ones
-    const otherUserRooms = allRooms.filter(r => r.userId !== user?.id);
-    const newRooms = [...otherUserRooms, ...updatedRooms];
-    
-    localStorage.setItem("museum_rooms", JSON.stringify(newRooms));
-    setRooms(updatedRooms);
+    try {
+      // Get all rooms including those from other users
+      const storedRooms = localStorage.getItem("museum_rooms");
+      const allRooms = storedRooms ? JSON.parse(storedRooms) as Room[] : [];
+      
+      // Filter out current user's rooms and add the updated ones
+      const otherUserRooms = allRooms.filter(r => r.userId !== user?.id);
+      const newRooms = [...otherUserRooms, ...updatedRooms];
+      
+      localStorage.setItem("museum_rooms", JSON.stringify(newRooms));
+      setRooms(updatedRooms);
+      return true;
+    } catch (error) {
+      console.error("Error saving rooms:", error);
+      return false;
+    }
   };
 
   const saveMemories = (updatedMemories: Memory[]) => {
-    // Get all memories including those from other users
-    const storedMemories = localStorage.getItem("museum_memories");
-    const allMemories = storedMemories ? JSON.parse(storedMemories) as Memory[] : [];
-    
-    // Filter out current user's memories and add the updated ones
-    const otherUserMemories = allMemories.filter(m => m.userId !== user?.id);
-    const newMemories = [...otherUserMemories, ...updatedMemories];
-    
-    localStorage.setItem("museum_memories", JSON.stringify(newMemories));
-    setMemories(updatedMemories);
+    try {
+      // Get all memories including those from other users
+      const storedMemories = localStorage.getItem("museum_memories");
+      const allMemories = storedMemories ? JSON.parse(storedMemories) as Memory[] : [];
+      
+      // Filter out current user's memories and add the updated ones
+      const otherUserMemories = allMemories.filter(m => m.userId !== user?.id);
+      const newMemories = [...otherUserMemories, ...updatedMemories];
+      
+      localStorage.setItem("museum_memories", JSON.stringify(newMemories));
+      setMemories(updatedMemories);
+      return true;
+    } catch (error) {
+      console.error("Error saving memories:", error);
+      return false;
+    }
   };
 
   // Helper function to get memory count for a specific room
@@ -142,13 +155,13 @@ export function MuseumProvider({ children }: MuseumProviderProps) {
       setIsLoading(true);
 
       // Check if user is within room limit
-      if (!isWithinLimits(rooms.length)) {
+      if (rooms.length >= planLimits.maxRooms) {
         toast.error(`Limite de salas atingido (${planLimits.maxRooms}). Faça upgrade para o plano Premium.`);
         throw new Error("Room limit reached");
       }
       
       // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       const now = new Date().toISOString();
       const newRoom: Room = {
@@ -160,7 +173,11 @@ export function MuseumProvider({ children }: MuseumProviderProps) {
       };
       
       const updatedRooms = [...rooms, newRoom];
-      saveRooms(updatedRooms);
+      const saved = saveRooms(updatedRooms);
+      
+      if (!saved) {
+        throw new Error("Failed to save room");
+      }
       
       toast.success("Sala criada com sucesso");
       return newRoom;
@@ -237,15 +254,14 @@ export function MuseumProvider({ children }: MuseumProviderProps) {
     try {
       setIsLoading(true);
       
-      // Check if user is within memory limit for this room
-      const roomMemoryCount = getRoomMemoryCount(data.roomId);
-      if (!isWithinLimits(rooms.length, roomMemoryCount)) {
+      // Check if user can add memory to this room
+      if (!canAddMemoryToRoom(data.roomId)) {
         toast.error(`Limite de memórias atingido (${planLimits.maxMemoriesPerRoom} por sala). Faça upgrade para o plano Premium.`);
         throw new Error("Memory limit reached");
       }
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Simulate API delay - reduced for better UX
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       const now = new Date().toISOString();
       const newMemory: Memory = {
@@ -257,7 +273,11 @@ export function MuseumProvider({ children }: MuseumProviderProps) {
       };
       
       const updatedMemories = [...memories, newMemory];
-      saveMemories(updatedMemories);
+      const saved = saveMemories(updatedMemories);
+      
+      if (!saved) {
+        throw new Error("Failed to save memory");
+      }
       
       toast.success("Memória criada com sucesso");
       return newMemory;
@@ -274,8 +294,8 @@ export function MuseumProvider({ children }: MuseumProviderProps) {
     
     try {
       setIsLoading(true);
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // Simulate API delay - reduced for better UX
+      await new Promise(resolve => setTimeout(resolve, 300));
       
       const memoryIndex = memories.findIndex(m => m.id === id && m.userId === user.id);
       if (memoryIndex === -1) throw new Error("Memory not found");
@@ -288,7 +308,11 @@ export function MuseumProvider({ children }: MuseumProviderProps) {
       
       const updatedMemories = [...memories];
       updatedMemories[memoryIndex] = updatedMemory;
-      saveMemories(updatedMemories);
+      const saved = saveMemories(updatedMemories);
+      
+      if (!saved) {
+        throw new Error("Failed to update memory");
+      }
       
       toast.success("Memória atualizada com sucesso");
       return updatedMemory;

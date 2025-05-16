@@ -13,6 +13,7 @@ interface PlanContextType {
   currentPlan: PlanType;
   planLimits: PlanLimits;
   isWithinLimits: (roomCount: number, memoryCount?: number) => boolean;
+  canAddMemoryToRoom: (roomId: string) => boolean;
   upgradeToPremium: () => void;
   isPremium: boolean;
   usagePercentage: number;
@@ -79,6 +80,14 @@ export function PlanProvider({ children }: PlanProviderProps) {
     return withinRoomLimit;
   };
 
+  // New function: Check if user can add memory to specific room
+  const canAddMemoryToRoom = (roomId: string) => {
+    if (isPremium) return true;
+    
+    const usage = getUsageDetails(roomId);
+    return usage.current < usage.max;
+  };
+
   // Get detailed usage information for a specific room
   const getUsageDetails = (roomId: string) => {
     // This function would normally fetch data from the API
@@ -111,6 +120,7 @@ export function PlanProvider({ children }: PlanProviderProps) {
     currentPlan,
     planLimits,
     isWithinLimits,
+    canAddMemoryToRoom,
     upgradeToPremium,
     isPremium,
     usagePercentage,

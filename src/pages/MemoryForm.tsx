@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -22,7 +21,7 @@ export default function MemoryForm() {
   const { roomId, memoryId } = useParams<{ roomId: string; memoryId: string }>();
   const { rooms, memories, createMemory, updateMemory, isLoading, getRoomMemoryCount } = useMuseum();
   const navigate = useNavigate();
-  const { isPremium, getUsageDetails, planLimits } = usePlan();
+  const { isPremium, getUsageDetails, planLimits, canAddMemoryToRoom } = usePlan();
   
   // Form state
   const [title, setTitle] = useState("");
@@ -33,6 +32,7 @@ export default function MemoryForm() {
   const [mediaPreview, setMediaPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLimitReached, setIsLimitReached] = useState(false);
+  const [stayOnPage, setStayOnPage] = useState(false);
   
   // Refs for file inputs
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -47,8 +47,7 @@ export default function MemoryForm() {
   useEffect(() => {
     // Check if the user has reached the memory limit
     if (roomId && !isPremium && !isEditMode) {
-      const usage = getUsageDetails(roomId);
-      setIsLimitReached(usage.current >= planLimits.maxMemoriesPerRoom);
+      setIsLimitReached(!canAddMemoryToRoom(roomId));
     }
     
     if (isEditMode && memoryId) {
@@ -62,7 +61,7 @@ export default function MemoryForm() {
         setMediaPreview(memory.mediaUrl || null);
       }
     }
-  }, [memoryId, memories, isEditMode, roomId, isPremium, getUsageDetails, planLimits]);
+  }, [memoryId, memories, isEditMode, roomId, isPremium, canAddMemoryToRoom]);
 
   const handleMediaUpload = (e: React.ChangeEvent<HTMLInputElement>, type: "image" | "video" | "audio") => {
     const file = e.target.files?.[0];
@@ -99,6 +98,15 @@ export default function MemoryForm() {
   const clearMedia = () => {
     setMediaUrl("");
     setMediaPreview(null);
+  };
+
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setContent("");
+    setMediaUrl("");
+    setMediaPreview(null);
+    // Keep the same media type as user selected
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -138,18 +146,34 @@ export default function MemoryForm() {
       };
       
       if (isEditMode && memoryId) {
-        await updateMemory(memoryId, memoryData);
+        const updatedMemory = await updateMemory(memoryId, memoryData);
         toast.success("Memória atualizada com sucesso");
-        navigate(`/rooms/${roomId}/memories/${memoryId}`);
+
+        if (stayOnPage) {
+          // Keep user on the same page but reset the form submission state
+          setIsSubmitting(false);
+        } else {
+          navigate(`/rooms/${roomId}/memories/${memoryId}`);
+        }
       } else {
         const newMemory = await createMemory(memoryData);
         toast.success("Memória criada com sucesso");
-        navigate(`/rooms/${roomId}/memories/${newMemory.id}`);
+        
+        if (stayOnPage) {
+          // Keep user on the same page and reset the form for new entry
+          resetForm();
+          setIsSubmitting(false);
+          // Update the limit reached status
+          if (roomId && !isPremium) {
+            setIsLimitReached(!canAddMemoryToRoom(roomId));
+          }
+        } else {
+          navigate(`/rooms/${roomId}/memories/${newMemory.id}`);
+        }
       }
     } catch (error) {
       console.error("Error submitting memory:", error);
       toast.error("Ocorreu um erro ao salvar a memória");
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -265,17 +289,6 @@ export default function MemoryForm() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="title">Título</Label>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => navigate(`/rooms/${roomId}`)}
-                    disabled={isLoading || isSubmitting}
-                    className="text-highlight hover:text-highlight-dark"
-                  >
-                    <ArrowLeft size={16} className="mr-1" />
-                    Voltar
-                  </Button>
                 </div>
                 <Input
                   id="title"
@@ -467,26 +480,41 @@ export default function MemoryForm() {
               )}
             </div>
             
-            <div className="flex justify-end space-x-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate(`/rooms/${roomId}`)}
-                disabled={isLoading || isSubmitting}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                type="submit" 
-                className="highlight-btn" 
-                disabled={isLoading || isSubmitting}
-              >
-                <Save size={16} className="mr-2" />
-                {isSubmitting 
-                  ? (isEditMode ? "Salvando..." : "Criando...") 
-                  : (isEditMode ? "Salvar Alterações" : "Salvar Memória")
-                }
-              </Button>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center space-y-4 sm:space-y-0">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="stayOnPage"
+                  checked={stayOnPage}
+                  onChange={(e) => setStayOnPage(e.target.checked)}
+                  className="rounded text-highlight focus:ring-highlight"
+                />
+                <Label htmlFor="stayOnPage" className="text-sm cursor-pointer">
+                  Continuar adicionando memórias após salvar
+                </Label>
+              </div>
+              
+              <div className="flex justify-end space-x-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate(`/rooms/${roomId}`)}
+                  disabled={isLoading || isSubmitting}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="highlight-btn" 
+                  disabled={isLoading || isSubmitting}
+                >
+                  <Save size={16} className="mr-2" />
+                  {isSubmitting 
+                    ? (isEditMode ? "Salvando..." : "Criando...") 
+                    : (isEditMode ? "Salvar Alterações" : "Salvar Memória")
+                  }
+                </Button>
+              </div>
             </div>
           </form>
         </div>
